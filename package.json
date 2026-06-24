@@ -1,0 +1,33 @@
+{
+  "name": "private-agent-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "ts-node src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ksj8624-sudo/private-agent-server.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ksj8624-sudo/private-agent-server/issues"
+  },
+  "homepage": "https://github.com/ksj8624-sudo/private-agent-server#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "node-telegram-bot-api": "^0.67.0",
+    "openai": "^6.44.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "@types/node-telegram-bot-api": "^0.64.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
