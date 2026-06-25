@@ -83,8 +83,69 @@ async function processTelegramUpdate(update) {
     return;
   }
 
+  if (text.startsWith("/review")) {
+    const target = text.replace("/review", "").trim();
+
+    if (!target) {
+      await sendTelegramMessage(
+        chatId,
+        "리뷰할 코드나 내용을 같이 보내줘. 예: /review const a = 1;",
+      );
+      return;
+    }
+
+    const answer = await askOpenAI(
+      [
+        "아래 코드 또는 내용을 코드리뷰해줘.",
+        "문제점, 개선점, 다음 액션을 짧게 정리해줘.",
+        "",
+        target,
+      ].join("\n"),
+    );
+
+    await sendTelegramMessage(chatId, answer);
+    return;
+  }
+
   if (text === "/help") {
-    await sendTelegramMessage(chatId, "사용법: /ask 질문내용");
+    await sendTelegramMessage(
+      chatId,
+      [
+        "사용 가능한 명령어",
+        "/start - 봇 시작",
+        "/review 코드내용 - 코드리뷰 요청",
+        "/help - 도움말",
+        "/ping - 연결 확인",
+        "/plan 주제 - 개발 계획 3단계 생성",
+        "/status - 에이전트 상태 확인",
+        "/ask 질문내용 - OpenAI에게 질문",
+      ].join("\n"),
+    );
+    return;
+  }
+
+  if (text.startsWith("/plan")) {
+    const topic = text.replace("/plan", "").trim() || "오늘 개발 작업";
+
+    const answer = await askOpenAI(
+      `${topic}에 대해 실행 가능한 개발 계획을 3단계로 짧게 정리해줘.`,
+    );
+
+    await sendTelegramMessage(chatId, answer);
+    return;
+  }
+
+  if (text === "/status") {
+    await sendTelegramMessage(
+      chatId,
+      [
+        "✅ Private Agent 상태",
+        "- Telegram webhook: connected",
+        "- Lambda: running",
+        "- OpenAI: connected",
+        "- Phase: 5 - Local Agent 준비",
+      ].join("\n"),
+    );
     return;
   }
 
