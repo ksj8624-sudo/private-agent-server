@@ -12,9 +12,6 @@ async function sendTelegramMessage(chatId, text) {
 
   const result = await response.json();
 
-  console.log("Telegram status:", response.status);
-  console.log("Telegram result:", JSON.stringify(result));
-
   if (!response.ok) {
     console.error("Telegram sendMessage failed:", result);
   }
@@ -43,9 +40,6 @@ async function askOpenAI(question) {
 
     const result = await response.json();
 
-    console.log("OpenAI status:", response.status);
-    console.log("OpenAI result:", JSON.stringify(result));
-
     if (!response.ok) {
       console.error("OpenAI request failed:", result);
       return "OpenAI 요청 중 오류가 발생했어. 잠시 후 다시 시도해줘.";
@@ -71,6 +65,55 @@ async function askOpenAI(question) {
   }
 }
 
+async function askAndReply(chatId, prompt) {
+  const answer = await askOpenAI(prompt);
+  await sendTelegramMessage(chatId, answer);
+}
+
+async function getBranchDiff(baseBranch, headBranch) {
+  const owner = process.env.GITHUB_OWNER;
+  const repo = process.env.GITHUB_REPO;
+
+  const url =
+    `https://api.github.com/repos/${owner}/${repo}` +
+    `/compare/${encodeURIComponent(baseBranch)}...${encodeURIComponent(headBranch)}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "private-agent-server",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+
+  const result = await response.json();
+
+  console.log("GitHub compare status:", response.status);
+
+  if (!response.ok) {
+    console.error("GitHub compare failed:", result.message);
+    throw new Error("GitHub diff 조회 실패");
+  }
+
+  const diff = result.files
+    ?.filter((file) => file.patch)
+    .slice(0, 10)
+    .map((file) =>
+      [
+        `파일: ${file.filename}`,
+        `상태: ${file.status}`,
+        "```diff",
+        file.patch,
+        "```",
+      ].join("\n"),
+    )
+    .join("\n\n")
+    .slice(0, 12000);
+
+  return diff || "";
+}
+
 async function processTelegramUpdate(update) {
   const message = update.message;
   if (!message?.text) return;
@@ -89,12 +132,58 @@ async function processTelegramUpdate(update) {
     if (!target) {
       await sendTelegramMessage(
         chatId,
-        "리뷰할 코드나 내용을 같이 보내줘. 예: /review const a = 1;",
+        [
+          "리뷰할 코드 또는 브랜치를 입력해줘.",
+          "예: /review const a = 1;",
+          "예: /review feature/test main",
+        ].join("\n"),
       );
       return;
     }
 
-    const answer = await askOpenAI(
+    const parts = target.split(/\s+/);
+
+    // /review feature/test main
+    if (parts.length === 2 && !target.includes("\n")) {
+      const [headBranch, baseBranch] = parts;
+
+      await sendTelegramMessage(
+        chatId,
+        `GitHub diff 리뷰 시작: ${baseBranch}...${headBranch}`,
+      );
+
+      try {
+        const diff = await getBranchDiff(baseBranch, headBranch);
+
+        if (!diff) {
+          await sendTelegramMessage(chatId, "리뷰할 코드 변경사항이 없어.");
+          return;
+        }
+
+        await askAndReply(
+          chatId,
+          [
+            "아래 GitHub 브랜치 diff를 코드리뷰해줘.",
+            "Critical, Warning, Suggestion으로 나누고 각 항목은 짧게 작성해줘.",
+            "변경과 직접 관련 없는 일반론은 제외해줘.",
+            "",
+            diff,
+          ].join("\n"),
+        );
+      } catch (error) {
+        console.error("GitHub review error:", error);
+        await sendTelegramMessage(
+          chatId,
+          "GitHub 브랜치 비교 중 오류가 발생했어. 브랜치명과 권한을 확인해줘.",
+        );
+      }
+
+      return;
+    }
+
+    // 기존 텍스트 리뷰
+    await askAndReply(
+      chatId,
       [
         "아래 코드 또는 내용을 코드리뷰해줘.",
         "문제점, 개선점, 다음 액션을 짧게 정리해줘.",
@@ -102,8 +191,6 @@ async function processTelegramUpdate(update) {
         target,
       ].join("\n"),
     );
-
-    await sendTelegramMessage(chatId, answer);
     return;
   }
 
@@ -111,14 +198,15 @@ async function processTelegramUpdate(update) {
     await sendTelegramMessage(
       chatId,
       [
-        "사용 가능한 명령어",
+        "🤖 Private Agent 사용법",
+        "",
         "/start - 봇 시작",
-        "/review 코드내용 - 코드리뷰 요청",
         "/help - 도움말",
         "/ping - 연결 확인",
-        "/plan 주제 - 개발 계획 3단계 생성",
         "/status - 에이전트 상태 확인",
-        "/ask 질문내용 - OpenAI에게 질문",
+        "/ask 질문 - AI에게 질문",
+        "/plan 주제 - 개발 계획 3단계 생성",
+        "/review 코드내용 - 코드리뷰 요청",
       ].join("\n"),
     );
     return;
@@ -127,11 +215,10 @@ async function processTelegramUpdate(update) {
   if (text.startsWith("/plan")) {
     const topic = text.replace("/plan", "").trim() || "오늘 개발 작업";
 
-    const answer = await askOpenAI(
+    await askAndReply(
+      chatId,
       `${topic}에 대해 실행 가능한 개발 계획을 3단계로 짧게 정리해줘.`,
     );
-
-    await sendTelegramMessage(chatId, answer);
     return;
   }
 
@@ -155,10 +242,7 @@ async function processTelegramUpdate(update) {
   }
 
   if (text.startsWith("/ask")) {
-    console.log("ASK command received:", text);
-
     const question = text.replace("/ask", "").trim();
-    console.log("question:", question);
 
     if (!question) {
       await sendTelegramMessage(
@@ -168,11 +252,7 @@ async function processTelegramUpdate(update) {
       return;
     }
 
-    console.log("call OpenAI");
-    const answer = await askOpenAI(question);
-    console.log("answer:", answer);
-
-    await sendTelegramMessage(chatId, answer);
+    await askAndReply(chatId, question);
     return;
   }
 
@@ -180,9 +260,6 @@ async function processTelegramUpdate(update) {
 }
 
 export const handler = async (event) => {
-  console.log("EVENT:", JSON.stringify(event));
-  console.log("has TELEGRAM_BOT_TOKEN:", !!process.env.TELEGRAM_BOT_TOKEN);
-  console.log("has OPENAI_API_KEY:", !!process.env.OPENAI_API_KEY);
   let update;
 
   try {
