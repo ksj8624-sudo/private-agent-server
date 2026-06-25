@@ -1,3 +1,14 @@
 node_modules
 .env
 dist
+# Secrets
+.env
+.env.*
+!.env.example
+node_modules/
+
+# Secrets
+.env
+.env.*
+!.env.example
+node_modules/
