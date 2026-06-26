@@ -262,6 +262,53 @@ async function processTelegramUpdate(update) {
 export const handler = async (event) => {
   let update;
 
+  const githubEvent =
+    event.headers?.["x-github-event"] || event.headers?.["X-GitHub-Event"];
+
+  if (githubEvent) {
+    console.log("GitHub event:", githubEvent);
+
+    let payload;
+
+    try {
+      payload = JSON.parse(event.body || "{}");
+    } catch (error) {
+      console.error("Invalid GitHub JSON:", error);
+
+      return {
+        statusCode: 400,
+        body: "invalid json",
+      };
+    }
+
+    if (githubEvent === "pull_request") {
+      const { action, pull_request: pr, repository: repo } = payload;
+
+      // opened: PR 최초 생성
+      // synchronize: PR에 새 commit push
+      if (action === "opened" || action === "synchronize") {
+        await sendTelegramMessage(
+          process.env.TELEGRAM_CHAT_ID,
+          [
+            "🔔 GitHub PR 감지",
+            `- action: ${action}`,
+            `- repo: ${repo?.full_name || "unknown"}`,
+            `- PR: #${pr?.number || "?"} ${pr?.title || "제목 없음"}`,
+            `- branch: ${pr?.head?.ref || "?"} → ${pr?.base?.ref || "?"}`,
+            `- url: ${pr?.html_url || ""}`,
+          ].join("\n"),
+        );
+      } else {
+        console.log("Ignored PR action:", action);
+      }
+    }
+
+    return {
+      statusCode: 200,
+      body: "ok",
+    };
+  }
+
   try {
     update = JSON.parse(event.body || "{}");
   } catch (error) {
@@ -283,3 +330,4 @@ export const handler = async (event) => {
     body: "ok",
   };
 };
+// pr webhook test
