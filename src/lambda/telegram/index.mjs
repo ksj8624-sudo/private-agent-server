@@ -287,6 +287,9 @@ export const handler = async (event) => {
       // opened: PR 최초 생성
       // synchronize: PR에 새 commit push
       if (action === "opened" || action === "synchronize") {
+        const baseBranch = pr?.base?.ref;
+        const headBranch = pr?.head?.ref;
+
         await sendTelegramMessage(
           process.env.TELEGRAM_CHAT_ID,
           [
@@ -294,10 +297,56 @@ export const handler = async (event) => {
             `- action: ${action}`,
             `- repo: ${repo?.full_name || "unknown"}`,
             `- PR: #${pr?.number || "?"} ${pr?.title || "제목 없음"}`,
-            `- branch: ${pr?.head?.ref || "?"} → ${pr?.base?.ref || "?"}`,
+            `- branch: ${headBranch || "?"} → ${baseBranch || "?"}`,
             `- url: ${pr?.html_url || ""}`,
           ].join("\n"),
         );
+
+        if (!baseBranch || !headBranch) {
+          await sendTelegramMessage(
+            process.env.TELEGRAM_CHAT_ID,
+            "PR 브랜치 정보를 읽지 못해서 자동 리뷰를 건너뛰었어.",
+          );
+
+          return {
+            statusCode: 200,
+            body: "ok",
+          };
+        }
+
+        await sendTelegramMessage(
+          process.env.TELEGRAM_CHAT_ID,
+          `🤖 PR 자동 리뷰 시작 (${headBranch} → ${baseBranch})`,
+        );
+
+        try {
+          const diff = await getBranchDiff(baseBranch, headBranch);
+
+          if (!diff) {
+            await sendTelegramMessage(
+              process.env.TELEGRAM_CHAT_ID,
+              "리뷰할 변경사항이 없어.",
+            );
+          } else {
+            await askAndReply(
+              process.env.TELEGRAM_CHAT_ID,
+              [
+                "아래 GitHub Pull Request diff를 코드리뷰해줘.",
+                "Critical, Warning, Suggestion으로 나누어 작성해줘.",
+                "변경과 직접 관련 없는 일반론은 제외해줘.",
+                "",
+                diff,
+              ].join("\n"),
+            );
+          }
+        } catch (error) {
+          console.error("PR auto review error:", error);
+
+          await sendTelegramMessage(
+            process.env.TELEGRAM_CHAT_ID,
+            "PR 자동 리뷰 실패",
+          );
+        }
       } else {
         console.log("Ignored PR action:", action);
       }
@@ -330,4 +379,3 @@ export const handler = async (event) => {
     body: "ok",
   };
 };
-// pr webhook test
