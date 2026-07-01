@@ -27,7 +27,7 @@ Telegram을 인터페이스로 사용하는 개인 AI Agent 서버를 만든다.
 
 ## 현재 폴더 구조
 
-```text
+````text
 private-agent-server/
 ├── src/
 │   ├── bot/
@@ -131,4 +131,254 @@ Lambda Timeout: 30 seconds
 OpenAI Abort Timeout: 20 seconds
 OpenAI Model: gpt-5-mini
 OpenAI max_output_tokens: 1000
+
+---
+
+# Phase 6 - GitHub Integration (Completed)
+
+## 목표
+
+GitHub와 Private Agent를 연동하여 Pull Request 이벤트를 자동으로 감지하고,
+OpenAI를 이용한 코드 리뷰를 Telegram으로 전달하는 기능 구현.
+
+---
+
+## 완료 기능
+
+### GitHub Branch Diff Review
+
+Telegram에서 브랜치를 직접 리뷰 가능
+
+```text
+/review feature/login main
+````
+
+동작 순서
+
+```text
+Telegram
+    ↓
+Lambda
+    ↓
+GitHub Compare API
+    ↓
+Branch Diff 조회
+    ↓
+OpenAI Code Review
+    ↓
+Telegram 응답
 ```
+
+---
+
+### GitHub Webhook
+
+API Gateway Route 추가
+
+```text
+POST /github-webhook
+```
+
+GitHub Repository
+
+```
+Settings
+    ↓
+Webhooks
+```
+
+등록 완료
+
+Webhook Event
+
+```text
+Pull requests
+```
+
+처리 이벤트
+
+```text
+opened
+synchronize
+```
+
+---
+
+### PR Notification
+
+PR 생성 시
+
+```text
+GitHub
+    ↓
+Webhook
+    ↓
+Lambda
+    ↓
+Telegram
+```
+
+예시
+
+```text
+🔔 GitHub PR 감지
+
+action : opened
+
+repo
+
+PR 번호
+
+브랜치
+
+URL
+```
+
+PR 업데이트(push)
+
+```text
+action : synchronize
+```
+
+자동 감지 완료
+
+---
+
+### PR Auto Review
+
+Webhook에서
+
+```
+base branch
+head branch
+```
+
+자동 추출
+
+GitHub Compare API 호출
+
+```text
+compare/base...head
+```
+
+Diff 생성
+
+↓
+
+OpenAI Review
+
+↓
+
+Telegram 자동 전송
+
+리뷰 형식
+
+```text
+Critical
+
+Warning
+
+Suggestion
+```
+
+---
+
+## AWS 구성
+
+```text
+GitHub
+
+↓
+
+Webhook
+
+↓
+
+API Gateway
+
+↓
+
+AWS Lambda
+
+↓
+
+GitHub API
+
+↓
+
+OpenAI API
+
+↓
+
+Telegram
+```
+
+---
+
+## Lambda 환경변수
+
+```text
+OPENAI_API_KEY
+
+TELEGRAM_BOT_TOKEN
+
+TELEGRAM_CHAT_ID
+
+GITHUB_TOKEN
+
+GITHUB_OWNER
+
+GITHUB_REPO
+
+GITHUB_WEBHOOK_SECRET
+```
+
+---
+
+## 구현 완료 명령어
+
+```text
+/start
+
+/help
+
+/ping
+
+/status
+
+/ask
+
+/plan
+
+/review
+```
+
+---
+
+## 현재 Agent 기능
+
+- Telegram Bot
+- OpenAI 질문
+- 개발 계획 생성
+- 코드 리뷰
+- GitHub Branch Diff 리뷰
+- GitHub PR 감지
+- GitHub PR 자동 코드 리뷰
+- AWS Lambda Serverless 운영
+
+---
+
+## 다음 Phase
+
+### Phase 7
+
+Backend API Server 구축
+
+예정 기능
+
+- Express API
+- JWT Login
+- Refresh Token
+- Health Check
+- AWS 배포
+- Dashboard 연동
