@@ -23,3 +23,24 @@ export async function askBackend(question: string): Promise<string> {
   const data = await response.json();
   return data.answer;
 }
+
+export async function generatePlanBackend(topic: string): Promise<string> {
+  console.log("[generatePlanBackend] topic:", topic);
+  const response = await fetch(`${BACKEND_API_URL}/api/plan`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ topic }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      ` ${BACKEND_API_URL} Backend request failed with status ${response.status}`,
+    );
+  }
+
+  const data = await response.json();
+  console.log("[generatePlanBackend] response data:", data);
+  return data.answer;
+}
