@@ -1,31 +1,28 @@
 import TelegramBot from "node-telegram-bot-api";
 import { generatePlanBackend } from "../service/backendService";
+import { sendMessage } from "../service/telegramService";
+import { PLAN_MESSAGES } from "../constants/telegramMessages";
 
 export function registerPlanCommand(bot: TelegramBot) {
-  bot.onText(/\/plan (.+)/, async (msg, match) => {
+  bot.onText(/\/plan(?:\s+(.+))?/, async (msg, match) => {
     const topic = match?.[1]?.trim();
+    const chatId = msg.chat.id;
 
     console.log("[PLAN]", topic);
     if (!topic) {
-      await bot.sendMessage(
-        msg.chat.id,
-        "계획을 입력해줘.\n예: /plan 오늘 할 일",
-      );
+      await sendMessage(bot, chatId, PLAN_MESSAGES.EMPTY_REQUEST);
       return;
     }
 
     try {
-      await bot.sendMessage(msg.chat.id, `계획을 등록했어: ${topic}`);
+      await sendMessage(bot, chatId, `${PLAN_MESSAGES.PROCESSING}: ${topic}`);
       const answer = await generatePlanBackend(topic);
 
-      await bot.sendMessage(msg.chat.id, answer);
+      await sendMessage(bot, chatId, answer);
     } catch (error) {
-      console.error("[planCommand] Error:", error);
+      console.error("[planCommand] Command failed:", error);
 
-      await bot.sendMessage(
-        msg.chat.id,
-        "계획 등록 중 오류가 발생했어. 잠시 후 다시 시도해줘.",
-      );
+      await sendMessage(bot, chatId, PLAN_MESSAGES.ERROR);
     }
   });
 }

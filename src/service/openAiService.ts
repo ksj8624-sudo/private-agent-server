@@ -14,6 +14,7 @@ const openai = new OpenAI({
 });
 
 export async function askOpenAi(question: string): Promise<string> {
+  console.log("[OpenAI Key]", process.env.OPENAI_API_KEY?.slice(0, 20));
   const response = await openai.responses.create({
     model: "gpt-5-mini",
     input: question,

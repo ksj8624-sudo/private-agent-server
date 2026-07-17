@@ -1,9 +1,12 @@
 import TelegramBot from "node-telegram-bot-api";
+import { sendMessage } from "../service/telegramService";
 
 export function registerHelpCommand(bot: TelegramBot) {
   bot.onText(/\/help/, async (msg) => {
-    await bot.sendMessage(
-      msg.chat.id,
+    const chatId = msg.chat.id;
+    await sendMessage(
+      bot,
+      chatId,
       [
         "PrivateAgent Commands",
         "",
@@ -12,7 +15,7 @@ export function registerHelpCommand(bot: TelegramBot) {
         "/ping - 연결 확인",
         "/status - 상태 확인",
         "/ask [질문] - AI 질문",
-      ].join("\n")
+      ].join("\n"),
     );
   });
 }

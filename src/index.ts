@@ -9,6 +9,8 @@ import { registerPingCommand } from "./commands/pingCommand";
 import { registerStartCommand } from "./commands/startCommand";
 import { registerStatusCommand } from "./commands/statusCommand";
 import { registerPlanCommand } from "./commands/planCommand";
+import { registerReviewCommand } from "./commands/reviewCommand";
+import { registerCursorCommand } from "./commands/cursorCommand";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -34,5 +36,7 @@ registerPingCommand(bot);
 registerStatusCommand(bot);
 registerAskCommand(bot);
 registerPlanCommand(bot);
+registerReviewCommand(bot);
+registerCursorCommand(bot);
 
 console.log("PrivateAgent is running...");
