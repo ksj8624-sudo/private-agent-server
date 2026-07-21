@@ -1,36 +1,48 @@
-export const CURSOR_TYPES = [
+export const AGENT_TYPE_ALIASES = {
+  c: "cursor",
+  cx: "codex",
+  cl: "claude",
+  gm: "gemini",
+} as const;
+
+export const AGENT_TASK_TYPES = [
   "feature",
   "review",
   "refactor",
   "bugfix",
 ] as const;
 
-export const CURSOR_WORKSPACES = ["backend", "server", "front"] as const;
+export const AGENT_WORKSPACES = ["backend", "server", "front"] as const;
 
-export const CURSOR_WORKSPACE_ALIASES = {
+export const AGENT_WORKSPACE_ALIASES = {
   b: "backend",
   s: "server",
   f: "front",
 } as const;
 
-export const CURSOR_TYPE_ALIASES = {
+export const AGENT_TASK_TYPE_ALIASES = {
   rv: "review",
   rf: "refactor",
   ft: "feature",
   bf: "bugfix",
 } as const;
 
-export type CursorWorkspaceAlias = keyof typeof CURSOR_WORKSPACE_ALIASES;
+export type AgentTypeAlias = keyof typeof AGENT_TYPE_ALIASES;
+export type AgentWorkspaceAlias = keyof typeof AGENT_WORKSPACE_ALIASES;
 
-export type CursorWorkspace =
-  (typeof CURSOR_WORKSPACE_ALIASES)[CursorWorkspaceAlias];
+export type AgentType = (typeof AGENT_TYPE_ALIASES)[AgentTypeAlias];
 
-export type CursorTypeAlias = keyof typeof CURSOR_TYPE_ALIASES;
+export type AgentWorkspace =
+  (typeof AGENT_WORKSPACE_ALIASES)[AgentWorkspaceAlias];
 
-export type CursorType = (typeof CURSOR_TYPE_ALIASES)[CursorTypeAlias];
+export type AgentTaskTypeAlias = keyof typeof AGENT_TASK_TYPE_ALIASES;
+
+export type AgentTaskType =
+  (typeof AGENT_TASK_TYPE_ALIASES)[AgentTaskTypeAlias];
 
 export interface AiDevRequest {
-  workspace: CursorWorkspace;
-  type: CursorType;
+  agentType: AgentType;
+  workspace: AgentWorkspace;
+  taskType: AgentTaskType;
   task: string;
 }

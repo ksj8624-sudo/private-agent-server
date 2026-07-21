@@ -3,16 +3,17 @@ export const COMMON_MESSAGES = {
   UNKNOWN_ERROR: "명령 처리 중 오류가 발생했어. 잠시 후 다시 시도해줘.",
 } as const;
 
-export const CURSOR_MESSAGES = {
-  PROCESSING: "Cursor 명령을 실행하고 있어...",
+export const AGENT_MESSAGES = {
+  PROCESSING: "Agent 명령을 실행하고 있어...",
   EMPTY_REQUEST: [
     "사용법:",
-    "/cursor <workspace> <type> <task>",
+    "/<agent> <workspace> <type> <task>",
     "",
+    "agent: cursor | codex",
     "workspace: backend | server | front",
     "type: feature | review | refactor | bugfix",
   ].join("\n"),
-  ERROR: "Cursor 명령 처리 중 오류가 발생했어. 잠시 후 다시 시도해줘.",
+  ERROR: "Agent 명령 처리 중 오류가 발생했어. 잠시 후 다시 시도해줘.",
 } as const;
 
 export const ASK_MESSAGES = {

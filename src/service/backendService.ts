@@ -71,6 +71,6 @@ export function reviewBackend(reviewCode: string): Promise<string> {
   return postBackend("/api/review", { reviewCode });
 }
 
-export function requestCursor(request: AiDevRequest): Promise<string> {
-  return postBackend("/dev/cursor", request, 5 * 60_000);
+export function requestAgent(request: AiDevRequest): Promise<string> {
+  return postBackend("/dev/agent", request, 5 * 60_000);
 }
