@@ -12,6 +12,12 @@ import {
   type AgentTypeAlias,
 } from "./vo/aiDevRequest";
 
+const AGENT_COMMANDS = ["cu", "cx", "cl"];
+
+const agentRegex = new RegExp(
+  `^\\/(${AGENT_COMMANDS.join("|")})(?:\\s+(.+))?$`,
+);
+
 function isAgentType(value: string): value is AgentTypeAlias {
   return value in AGENT_TYPE_ALIASES;
 }
@@ -25,11 +31,12 @@ function isAgentWorkspace(value: string): value is AgentWorkspaceAlias {
 }
 
 export function registerAgentCommand(bot: TelegramBot) {
-  bot.onText(/^\/(c(?:x)?)(?:\s+(.+))?$/, async (msg, match) => {
+  bot.onText(agentRegex, async (msg, match) => {
     const chatId = msg.chat.id;
     const agentTypeAlias = match?.[1]?.trim();
     const input = match?.[2]?.trim();
 
+    console.log("[AGENT]", agentTypeAlias, input);
     if (!agentTypeAlias || !input) {
       await sendMessage(bot, chatId, AGENT_MESSAGES.EMPTY_REQUEST);
       return;
